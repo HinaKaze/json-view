@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Json Visualization</title>
+    <script src="//cdn.bootcss.com/jquery/3.2.0/jquery.min.js"></script>
+    <script type="text/javascript">
+    // var json_url = "http://localhost:1012/log/things"
+    // var json_url = "http://localhost:8080/test/jsonView/sample.json"
+    $(document).ready(function() {
+        // $.get(json_url, function(data, status) {
+        //     if (status == "success") {
+        //         renderJSON(data);
+        //     } else {
+        //         alert("URL : " + json_url + ",get failed , STATUS : " + status);
+        //     };
+        // });
+        $("#-2").click(function(e) {
+            var message = $("#-1").val();
+            if (message == "") {
+                return
+            }
+            $("#1").html("");
+            renderJSON(JSON.parse(message));
+            $("#-1").val("");
+
+        });
+    });
+
+    function renderJSON(data) {
+
+        if (typeof(data) == "string") {
+            var json = JSON.parse(data)
+
+        } else if (typeof(data) == "object") {
+            var json = data
+        }
+
+        var root_level = 1
+        var html = getDIVHtml(1, root_level, "container")
+        $("body").append(html);
+        printJSON(1, root_level, "Root", json)
+    };
+
+    var id = 2;
+
+    function printJSON(fatherId, level, key, value) {
+        //value是一个基本类型
+        if (typeof(value) != "object") {
+        	if (typeof(value) == "undefined"){
+        		return
+        	}
+            var value_html = "<div class=\"attr\"><span class=\"attr_key\">" + key + "</span><span class=\"attr_value\">" + value + "</span></div>"
+            $("#" + fatherId).append(value_html)
+            return
+        }
+
+        //value是对象或者数组
+        if (typeof(value) == "object") {
+            if (Array.isArray(value)) {
+                //数组的每个元素是处于同一层级的
+                var div_id1 = id++;
+                $("#" + fatherId).append("<button class=\"array_button\" id=\"" + div_id1 + "\">" + key + " </button>");
+                var div_id2 = id++;
+                var div_html = getDIVHtml(div_id2, level, "array_container");
+
+                $("#" + fatherId).append(div_html);
+                $("#" + div_id1).click(function() {
+                    $("#" + div_id2).toggle(500);
+                    console.log($(this).css("background-color"))
+                    if($(this).css("background-color") == "rgb(255, 0, 0)"){
+                    	$(this).css("background-color","rgb(255, 255, 0)")
+                    }else{
+                    	$(this).css("background-color","rgb(255, 0, 0)")
+                    }
+                });
+                var fatherId = div_id2;
+
+
+                for (var i in value) {
+                    var div_id = id++;
+                    var div_html = getDIVHtml(div_id, level, "array");
+
+                    $("#" + fatherId).append(div_html);
+                    $("#" + div_id).append("<div class=\"array_name\">" + key + i + " </div>")
+
+                    for (var k in value[i]) {
+                        printJSON(div_id, level + 1, k, value[i][k])
+                    }
+                }
+            } else {
+                var div_id = id++;
+                var div_html = getDIVHtml(div_id, level, "object");
+
+                $("#" + fatherId).append(div_html);
+                $("#" + div_id).append("<div class=\"object_name\">" + key + "</div>")
+
+                var none_objects = []
+                var objects = []
+                for (var k in value) {
+                    //优先绘出成员
+                    if (typeof(value[k]) != "object") {
+                        none_objects[k] = value[k]
+                    } else {
+                        objects[k] = value[k]
+                    }
+                }
+
+                for (var k in none_objects) {
+                    printJSON(div_id, level + 1, k, none_objects[k])
+                }
+
+
+                for (var k in objects) {
+                    printJSON(div_id, level + 1, k, objects[k])
+                }
+            }
+            return
+        }
+    };
+
+    function getDIVHtml(id, level, classname) {
+        // var color_R = parseInt(Math.random() * 150) + 105
+        // var color_G = parseInt(Math.random() * 150) + 105
+        // var color_B = parseInt(Math.random() * 150) + 105
+        var color_R = (202 - level * 50 > 0) ? 255 - level * 30 : 0
+        var color_G = (252 - level * 50 > 0) ? 255 - level * 30 : 0
+        var color_B = 255
+        var background_color = "rgb(" + color_R + "," + color_G + "," + color_B + ")";
+        var obj_html = '<div id="' + id + '" class="' + classname + '" style="background-color:' + background_color + '"></div>'
+        return obj_html
+    }
+    </script>
+    <style type="text/css">
+    .container {}
+    
+    .attr {
+        /*display: inline-block;*/
+        /*float: left;*/
+    }
+    
+    .attr_key {
+        color: white;
+        text-shadow: 0 0 5px red;
+        width: 200px;
+        display: inline-block;
+        text-align: left;
+        overflow:hidden;
+        /*padding: 5px;*/
+    }
+    
+    .attr_value {
+        color: #333;
+        text-shadow: 0 0 5px #fff;
+    }
+    
+    .object {
+        margin: 5px;
+        padding: 2px;
+        /*float: left;*/
+    }
+    
+    .object_name {
+        text-align: left;
+        text-shadow: 2px 2px 2px #eee;
+        font-size: 20px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+    
+    .array_container {
+        display: none;
+    }
+    
+    .array {
+        margin: 5px;
+        padding: 2px;
+        /*float: left;*/
+        display: inline-block;
+        vertical-align: top;
+    }
+    
+    .array_name {
+        text-align: center;
+        text-shadow: 2px 2px 2px #eee;
+        font-size: 20px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+    
+    .array_button {
+    	background-color: yellow;
+    }
+
+    </style>
+</head>
+
+<body>
+    <textarea  rows="5" width="400px" placeholder="Insert json" id="-1"></textarea>
+    <button id="-2">parse</button>
+</body>
+
+</html>
